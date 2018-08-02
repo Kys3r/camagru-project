@@ -1,0 +1,184 @@
+html, body
+{
+	height: 100% !important;
+	width: 100% !important;
+}
+
+.creator
+{
+	width: 100% !important;
+	height: 200% !important;
+	background-image: url("../img/bc-creator.jpg");
+	background-size: cover;
+	-webkit-background-size: cover;
+	-moz-background-size: cover;
+	-o-background-size: cover;
+	background-size: cover;
+}
+
+.cont-center-creator
+{
+	width: 86% !important;
+	padding-right: 0 !important;
+}
+
+#user-img-principal
+{
+	width: 100%;
+	height: 100%;
+	position: relative;
+}
+
+.cam-render
+{
+	margin-right: 0 !important;
+	border-radius: 5px;
+}
+
+.button-creator
+{
+	margin-top: 10px;
+	margin-bottom: 10px;
+	text-align: center;
+}
+
+.align-self-right
+{
+	padding-left: 10% !important;
+	margin-top: 10px;
+}
+
+/* ------- Checkbox parts ------- */
+
+.filter-creator
+{
+	display: flex;
+	flex-wrap: wrap !important;
+}
+
+#checkbox-div
+{
+	display: none;
+}
+
+.checkbox-creator
+{
+	width: 100%;
+	height: 100%;
+}
+
+.checkbox-label
+{
+	/* height: 18vh !important;
+	width: 18vw !important; */
+}
+
+label > input
+{
+  visibility: hidden;
+  position: absolute;
+}
+label > input + img
+{
+  cursor:pointer;
+  border:2px solid transparent;
+}
+label > input:checked + img
+{
+  border:2px solid lightblue;
+}
+
+.form-creator
+{
+	border-radius: 10px;
+	margin-top: 20px;
+	background: linear-gradient(to bottom right, #000000, #434343);
+}
+
+/* ------- Canvas part -------*/
+
+#canvas
+{
+	z-index: 1;
+}
+
+#filterCanvas
+{
+	height: 30%;
+	width: 30%;
+	margin-left: 7%;
+	left: 61px;
+    right: 0px;
+    bottom: 0px;
+    top: 0px;
+	z-index: 2 !important;
+	position: absolute;
+	overflow: hidden !important;
+}
+
+img
+{
+	-webkit-user-drag: none;
+}
+
+
+#blah
+{
+	width: 100%;
+	height: 100%;
+}
+
+.canvas-render
+{
+	width: 100% !important;
+	height:100%;
+	margin-left: 7%;
+	border-radius: 5px;
+}
+
+.img-preview
+{
+	width: 103% !important;
+	height:100%;
+	margin-left: 10%;
+	border-radius: 5px;
+}
+
+.input-file
+{
+	width: 0%;
+	height: 0%;
+	visibility: hidden !important;
+}
+
+.img-creator
+{
+	width: 100%;
+	height: auto;
+	content:url(../img/morty.jpg);
+	background-size: cover;
+}
+
+/* Message part */
+
+#message-post
+{
+	background-color:#EEE7E6;
+	text-align: center;
+	font-family: Georgia, serif;
+	margin: 10px;
+	width: 100%;
+}
+
+/* old post parts */
+
+.feed-creator
+{
+	margin-top: 10%;
+	width: 100% !important;
+}
+
+#creator
+{
+	height: 100% !important;
+}

@@ -1,0 +1,45 @@
+#forget
+{
+	margin-left: 17px;
+}
+
+.error-input
+{
+	margin-left: 10px !important;
+	margin-right: 10px !important;
+}
+
+.href
+{
+	margin-top: 10%;
+	color: white !important;
+}
+
+.account-link-block
+{
+	margin-top: 10px !important;
+}
+
+#notif
+{
+	margin-top: 2%;
+	font-size: 1.5vw;
+	color: lightblue;
+	text-shadow: 1px 1px lightblue;
+}
+
+html, body {
+	height: 100% !important;
+	margin: 0 !important; padding: 0 !important;
+}
+body {
+	display : table !important;
+	width: 100% !important;
+}
+
+.footer
+{
+	display: table-row !important;
+	height: 30%;
+	background-color: #F5F5F5;
+}

@@ -1,0 +1,145 @@
+
+.feed-container
+{
+	width: 40% !important;
+	margin-top: 5%;
+}
+
+.media-content
+{
+	margin-top: 3%;
+}
+
+.frame-feed
+{
+	border-width: 15px !important;
+	border-radius: 20px;
+}
+
+.h3-login
+{
+	margin: 1%;
+	padding-bottom: 1%;
+	padding-top: 2%;
+	font-family: cursive;
+	color: #2599EF;
+	text-shadow: 1px 2px #2599EF;
+	font-size: 2.5vw;
+}
+
+.button-like
+{
+	width: 60px !important;
+	padding: 0 !important;
+	height: 26px;
+	border: none;
+	outline: none;
+}
+
+.button-like
+{
+	font-family: cursive;
+}
+
+.like-text
+{
+	margin-bottom: 5px;
+}
+
+.nb_likes
+{
+	padding-left: 2%;
+	font-size: 1.5vw;
+	color: lightpink;
+}
+
+.h5-login
+{
+	margin: 1%;
+	padding-top: 2%;
+	font-family: cursive;
+	color: #2599EF;
+	font-size: 1.5vw;
+	margin-left: 0;
+}
+
+.comment_post
+{
+	margin-left: 2%;
+	font-family: "Gill Sans", sans-serif;
+	font-size: 1.3vw;
+}
+
+.feed-post
+{
+	display: flex;
+    justify-content: center;
+}
+
+.img-feed
+{
+	margin-top: 2%;
+	width: 100%;
+	height: auto;
+	border-radius: 5px;
+}
+
+
+.message-post>p
+{
+	font-family: cursive;
+	font-size: 1.5vw;
+	color: lightblue;
+	margin-left: 1%;
+}
+
+.body-comment
+{
+	margin-top: 6%;
+	
+}
+
+.content-commentaire
+{
+	
+}
+
+.comment-user
+{
+	margin-top: 6%;
+	padding-bottom: 4%;
+}
+
+@media (max-width: 1281px) {
+
+	.h3-login
+	{
+		font-size: 5vw;
+		text-shadow: 0px 0px #2599EF;
+	}
+
+	.h5-login
+	{
+		font-size: 3.5vw;
+	}
+
+	.comment_post
+	{
+		font-size: 3vw;
+	}
+
+	.feed-container
+    {
+    	width: 60% !important;
+    	margin-top: 5%;
+    }
+}
+
+@media (max-width: 800px) {
+  
+	.feed-container
+    {
+    	width: 90% !important;
+    	margin-top: 5%;
+    }
+}
