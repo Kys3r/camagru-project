@@ -4,16 +4,16 @@ Albarbos - 2k18
 
 This project is the first of "web branch" in 101/42 schools.
 
-Principe is to produce a little picture editor, for introducing php\js\css langages.
+The principe is produce a little picture editor, for introducing php\js\css langages.
 
 External library and framwork are prohibited, except css framework without js part.
 
                                           
-                                          *********** INSTALLATION ***********
+                                          *********** INSTALLATION FOR MAC ***********
 
 Clone this docker setup https://github.com/mconnat/101_mamp.git (https://github.com/mconnat/101_mamp)
 
-Modify the docker-compose in the line about path directory.
+Modify docker-compose line about path directory.
 
 Modify /config/database.php about your post.
 
