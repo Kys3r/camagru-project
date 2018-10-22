@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta Content-Security-Policy: default-src 'self'>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale = 0.9, maximum-scale=0.9, user-scalable=no" />
+    <meta name="google-site-verification" content="XjYpSCCcUkSEpH_oE8k8wraVgqZZCRYqen4mLtoX9vc" />
+	<meta name="description" content="Ergonomic player tool finder for Fortnite's playground mode! Ready to build fight !?" />
+
+    <meta property="og:title" content="BUILDFIGHT.COM" />
+    <meta property="og:description" content="Ergonomic player tool finder for Fortnite's playground mode! Ready to build fight !?" />
+    <meta property="og:url" content="https://www.buildfight.com/" />
+    <meta property="og:image" content="/assets/img/vignette-og.png" />
+    <meta property="og:image:type" content="image/png" /> 
+
+    <title>Buildfight</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.16/vue.min.js"></script>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.2.0/css/flag-icon.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/assets/css/animation.css">
+    <link rel="stylesheet" type="text/css" href="/assets/css/style.css">
+    <link rel="icon" type="image/png" href="/assets/img/favicon.ico">
+    <script src="/src/vuejs/lib/filter_vue.js"></script>
+    <script src='https://www.google.com/recaptcha/api.js'></script>
+    <script type="text/javascript">
+        if (screen.width <= 1279) {
+            document.location = "mobile";
+        }
+    </script>
+</head>
+
+<body class="background d-none" onload="setPin()" style="overflow: hidden;">
+    <div id="transition-page"></div>
+    <div id="app">
+
+        <!-- barre de navigation -->
+        <nav class="navbar-color navbar enableScroll" id="page-1">
+            <img draggable="false" class="logo" src="/assets/img/Buldfight_Logo-texte_blanc.svg" v-on:click="goHome()" />
+            <form id='logout' v-on:submit.prevent="logout">
+                <button type="submit" name="submit" class="icon fas fa-sign-out-alt" v-if="authentified" style="border: none; background: none; outline: none;"></button>
+                <i class="icon fas fa-user" v-if="!authentified && !showSignPage" v-on:click="showLogPage = true"></i>
+                <i class="icon fas fa-bars" v-if="authentified && paramButton" v-on:click="showParamPage = true"></i>
+            </form>
+        </nav>
+
+        <!-- page de conection -->
+        <div id="success-alert" class="notification col-10 offset-1 col-sm-4 col-xl-3 offset-sm-8 offset-xl-9">{{notification}}</div>
+
+        <div class="surcouche col-md-12" v-show="showLogPage">
+            <div class="login col-md-6 offset-md-3 col-xl-4 offset-xl-4">
+                <form v-on:submit.prevent="signIn">
+                    <input type="text" name="username" class="form-control col-md-10 offset-md-1" v-model="username"
+                        placeholder="Login or Email" pattern="[a-zA-Z0-9]{3,16}" required title="Only alphabet characters | 3 - 16 characters">
+                    <input v-model="password" name="password" type="password" class="space-input form-control col-md-10 offset-md-1"
+                        placeholder="Password" pattern="[a-zA-Z0-9$+,:;=?@#|'<>.^*()%!-]{8,}" required title="Minimum 8 characters + 2 numbers">
+                    <div class="col-md-10 offset-md-1 m-3">
+                        <a href="#" v-on:click="showLogPage = false; showSignPage = true; clearData()">Register</a> -
+                        <a href="#" v-on:click="showLogPage = false; showPwdForget = true">Forgot Password</a>
+                    </div>
+                    <div class="row">
+                        <button type="submit" class="btn button-blue col-6 col-xl-4 offset-xl-2">Login</button>
+                        <button class="btn button-red col-6 col-xl-4" type="button" v-on:click="showLogPage = false">Exit</button>
+                    </div>
+                </form>
+                <form v-on:submit.prevent="resendEmail">
+                    <button v-if="showSendBackEmail" type="submit" class="col-12 col-xl-4 offset-xl-4 mt-1" v-on:click="showSendBackEmail = false">Sendback
+                        confirmation mail</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- alert msgs -->
+        <div class="surcouche col-md-12" v-show="showAlert">
+            <div class="login col-md-6 offset-md-3 col-xl-4 offset-xl-4 jello-horizontal">
+                <H2>
+                    <center>{{msgAlert}}</center>
+                </H2>
+                <button class="btn button-red col-md-3 offset-md-4" type="button" v-on:click="showAlert = false">Exit</button>
+            </div>
+        </div>
+
+        <!-- repport page -->
+        <div class="surcouche col-md-12" v-show="showReportPage">
+            <div class="login col-md-6 offset-md-3 col-xl-4 offset-xl-4">
+                <center>
+                    <H2>
+                        Why did you repport this player ?
+                    </H2>
+                </center>
+                <input type="radio" name="age" value="moins15" id="moins15" />
+                <label for="moins15">Fake Epic account</label><br />
+                <input type="radio" name="age" value="medium15-25" id="medium15-25" />
+                <label for="medium15-25">Inappropriate behavior</label><br />
+                <input type="radio" name="age" value="medium25-40" id="medium25-40" />
+                <label for="medium25-40">Non respect of the rules</label><br />
+                <div class="row">
+                    <button class="btn button-blue col-6" type="button" v-on:click="showReportPage = false">Send</button>
+                    <button class="btn button-red col-6" type="button" v-on:click="showReportPage = false">Exit</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Password forget -->
+        <div class="surcouche col-md-12" v-show="showPwdForget">
+            <div class="login col-12 col-md-4 offset-md-4 col-xl-2 offset-xl-5">
+                <form id="forget_password" method="post">
+                    <div class="m-3">
+                        <label class="text-sign-up">Enter your email</label>
+                        <input type="text" name="email_forget_form" class="form-control">
+                    </div>
+                    <div class="row">
+                        <button type="submit" name="button" class="btn button-blue col-6" v-on:click="showPwdForget = false; mailIsSended = true">Send
+                            email</button>
+                        <button type="button" class="btn button-red col-6" v-on:click="showPwdForget = false;">Exit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- password is sended -->
+        <div class="surcouche col-md-12" v-if="mailIsSended">
+            <div class="login col-12 col-md-4 offset-md-4 col-xl-2 offset-xl-5">
+                <div class="col-12 p-0 mb-3">An email will be sent to this account shortly.</div>
+                <button class="btn button-red col-12" type="button" v-on:click="mailIsSended = false">Ok</button>
+            </div>
+        </div>
+
+        <!-- New password -->
+        <div class="surcouche col-md-12" v-show="showNewPwd">
+            <div class="login col-12 col-md-4 offset-md-4 col-xl-2 offset-xl-5">
+                <div class="signInAlert p-1" v-show="selectedError != undefined" style="color: white;">
+                    <center><i class="fas fa-exclamation-triangle" style="padding: 10px;"></i>
+                        <span>{{ errorSignUp[selectedError] }}</span>
+                    </center>
+                </div>
+                <form v-on:submit.prevent="removePass">
+                    <label class='text-sign-up'>New Password</label>
+                    <input type='password' name='new_pwd' class="col-12" v-model="password" pattern="[a-zA-Z0-9$+,:;=?@#|'<>.^*()%!-]{8,}"
+                        required title="Minimum 8 characters + 2 numbers">
+                    <label class='text-sign-up'>Password verrifiaction</label>
+                    <input type='password' name='confirm_pwd' class="col-12" v-model="confirmPass" pattern="[a-zA-Z0-9$+,:;=?@#|'<>.^*()%!-]{8,}"
+                        required title="Minimum 8 characters + 2 numbers">
+                    <button type='submit' name="token" v-bind:value="token">send</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Casier -->
+        <div class="surcouche col-md-12" v-show="showLocker">
+            <div class="locker col-md-6 offset-md-3 col-xl-4 offset-xl-4 row">
+                <div v-for="skin in locker">
+                    <button class="locker-skin btn" v-on:click="skinId = skin" v-bind:style="{ 'background-image': 'url(/assets/img/skins/'+ skin +'.png)'}"></button>
+                </div>
+                <form id='skin' class="col-12 remove-marge" v-on:submit.prevent="skin">
+                    <button type="submit" class="btn button-blue col-4 offset-4" v-on:click="showLocker = false">Ok</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- setting user -->
+        <div class="surcouche col-md-12" v-show="showParamPage" style="overflow: scroll;">
+            <div class="param col-md-8 offset-md-2 col-xl-6 offset-xl-3">
+                <div class="signInAlert p-1" v-if="selectedError != 1 && selectedError != undefined" style="color: white;">
+                    <center><i class="fas fa-exclamation-triangle" style="padding: 10px;"></i>
+                        <span>
+                            {{errorSignUp[selectedError]}}
+                        </span>
+                    </center>
+                </div>
+                <div class="signInUpdated p-1" v-else-if="selectedError != undefined" style="color: white;">
+                    <center>
+                        <span>
+                            Your account is updated.
+                        </span>
+                    </center>
+                </div>
+
+                <!-- Username -->
+                <form id="username_setting" class="col-12 row" method="post">
+                    <div class="col-12 col-md-6">
+                        <label class="text-sign-up">Login</label>
+                        <input type="text" name="username" class="form-control" v-model="username" placeholder="3 characters minimum - 16 maximum"
+                            pattern="[a-zA-Z0-9]{3,16}" required title="Only alphabet characters | 3 - 16 characters"
+                            autofocus>
+                    </div>
+                    <button type="submit" class="space-input btn button-blue col-12 col-md-4 offset-md-1">Change login</button>
+                </form>
+
+                <!-- Email parts -->
+                <form id="email_setting" class="col-12 row" method="post">
+                    <div class="col-12 col-md-6">
+                        <label class="text-sign-up">Email</label>
+                        <input type="email" name="email" id="email" class="form-control" required title=""
+                            aria-describedby="emailHelp" placeholder="Enter email">
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="text-sign-up">Confirm email</label>
+                        <input type="email" name="email_confirm" id="confirm-email" class="form-control"
+                            aria-describedby="emailHelp" placeholder="Confirm email">
+                    </div>
+                    <button type="submit" class="space-input btn button-blue col-12 col-md-4 offset-md-7">Change Email</button>
+                </form>
+                <!-- Password parts -->
+                <form method="post" id="password_setting" class="col-12 remove-marge">
+                    <div>
+                        <label class="text-sign-up">Actual Password</label>
+                        <input name="actual_pwd" type="password" class="space-input form-control col-12 col-md-6"
+                            pattern="[a-zA-Z0-9$+,:;=?@#|'<>.^*()%!-]{8,}" required title="Minimum 8 characters + 2 numbers">
+                        <label class="text-sign-up">New password</label>
+                        <input name="pwd" type="password" class="space-input form-control col-12 col-md-6" v-model="password"
+                            pattern="[a-zA-Z0-9$+,:;=?@#|'<>.^*()%!-]{8,}" required title="Minimum 8 characters + 2 numbers">
+                        <small class="form-text text-muted">Minimum 6 characters + 2 numbers</small>
+
+                        <label class="text-sign-up">Confirm new password</label>
+                        <div class="col-12 row">
+                            <input type="password" name="pwd_confirm" class="space-input form-control col-12 col-md-6"
+                                v-model="confirmPass" pattern="[a-zA-Z0-9$+,:;=?@#|'<>.^*()%!-]{8,}" required title="Minimum 8 characters + 2 numbers">
+                            <button type="submit" class="space-input btn button-blue col-12 col-md-4 offset-md-1">Change
+                                Password</button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Selects parts -->
+
+                <!-- Region-->
+                <form method="post" id="region_setting" class="col-12 row">
+                    <div class="form-group col-12 col-md-6">
+                        <label class="text-sign-up">Region</label>
+                        <select name="region" v-model="selectedRegion">
+                            <option v-for="region in regions" v-bind:value="region.value">
+                                {{ region.region | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+                    <button type="submit" class="space-input btn button-blue col-12 col-md-4 offset-md-1">Change Region
+                        Server</button>
+                </form>
+
+                <!-- Language-->
+                <form method="post" id="language_setting" class="col-12 row">
+                    <div class="form-group col-12 col-md-6">
+                        <label class="text-sign-up">Language</label>
+                        <select name="language" v-model="selectedLanguage">
+                            <option v-for="language in languages" v-bind:value="language.value">
+                                {{ language.language | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+                    <button type="submit" class="space-input btn button-blue col-12 col-md-4 offset-md-1">Change
+                        Language</button>
+                </form>
+
+                <!-- Country -->
+                <form method="post" id="country_setting" class="col-12 row">
+                    <div class="form-group col-12 col-md-6">
+                        <label class="text-sign-up">Country</label>
+                        <select name="country" v-model="selectedCountry" class="col-12">
+                            <option v-for="country in countrys" v-bind:value="country.value">
+                                {{ country.country | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+                    <button type="submit" class="space-input btn button-blue col-12 col-md-4 offset-md-1">Change
+                        Country</button>
+                </form>
+
+                <!-- City -->
+                <form method="post" id="city_setting" class="col-12 row">
+                    <div class="form-group col-12 col-md-5">
+                        <label class="text-sign-up">Favorite Fortnite's city</label>
+                        <select name="city" v-model="selectedCity">
+                            <option v-for="city in citys" v-bind:value="city.value">
+                                {{ city.city | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+                    <button type="submit" class="space-input btn button-blue col-12 col-md-4 offset-md-2">Change
+                        Favorite City</button>
+                </form>
+
+                <!-- Platform -->
+                <form id="platform_epic_setting" class="col-12 row" method="post">
+                    <div class="form-group col-12 col-md-6">
+                        <label class="text-sign-up">Plateform</label>
+                        <select name="platform" v-model="selectedPlatform">
+                            <option v-for="platform in platforms" v-bind:value="platform.value">
+                                {{ platform.platform | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Epic account -->
+                    <div class="col-12 col-md-6">
+                        <label class="text-sign-up">Epic account</label>
+                        <input name="epic_account" v-model="epicId" type="text" class="form-control" placeholder="Epic account"
+                            pattern="[a-zA-Z0-9-_\s]{3,}" required title="Only alphanumeric and space / '-' / '_' authorized)">
+                    </div>
+                    <button type="submit" class="space-input btn button-blue col-12 col-md-4 offset-md-7">Change Epic
+                        Account / Plateform </button>
+                    <button class="btn button-red col-4 offset-4" type="button" v-on:click="showParamPage = false; selectedError = undefined">Exit</button>
+                </form>
+            </div>
+        </div>
+
+
+        <!--Formulaire d'inscription -->
+        <form v-on:submit.prevent="signUp">
+            <div class="surcouche col-md-12 register" v-show="showSignPage">
+                <div class="param col-md-6 offset-md-3 col-xl-4 offset-xl-4 pt-5">
+
+                    <div class="signInAlert p-1" v-show="selectedError != undefined" style="color: white;">
+                        <center><i class="fas fa-exclamation-triangle" style="padding: 10px;"></i>
+                            <span>
+                                {{ errorSignUp[selectedError] }}
+                            </span></center>
+                    </div>
+                    <label class="text-sign-up">Login</label>
+                    <div>
+                        <input type="text" name="username" class="form-control" v-model="username" placeholder="Enter your login"
+                            pattern="[a-zA-Z0-9]{3,16}" required title="Only alphabet characters | 3 - 16 characters"
+                            autofocus>
+                    </div>
+
+                    <!-- Email parts -->
+                    <label class="text-sign-up">Email</label>
+                    <div>
+                        <input v-model="email" name="email" type="email" class="form-control" id="email-setting"
+                            required title="" aria-describedby="emailHelp" placeholder="Enter email">
+                    </div>
+                    <div>
+                        <input type="email" name="email_confirm" id="confirm-email-setting" class="form-control mt-1"
+                            v-model="confirmMail" aria-describedby="emailHelp" placeholder="Confirm email">
+                    </div>
+
+                    <!-- Password parts -->
+
+                    <div>
+                        <label class="text-sign-up">Password</label>
+                        <input type="password" name="pwd" class="space-input form-control" v-model="password"
+                            placeholder="Password" pattern="[a-zA-Z0-9$+,:;=?@#|'<>.^*()%!-]{8,}" required title="Minimum 8 characters + 2 numbers">
+                        <input type="password" name="pwd_confirm" class="space-input form-control" v-model="confirmPass"
+                            placeholder="Confirm password" pattern="[a-zA-Z0-9$+,:;=?@#|'<>.^*()%!-]{8,}" required
+                            title="Minimum 6 characters + 2 numbers">
+                        <p style="font-size: 0.8em" class="col-12">Minimum 8 characters (6 characters + 2 numbers)</p>
+                    </div>
+
+                    <!-- Epic account -->
+                    <div>
+                        <input name="epic_account" class="form-control" placeholder="Epic account" pattern="[a-zA-Z0-9-_\s]{3,}"
+                            required title="Only alphanumeric and space / '-' / '_' authorized)" v-model="epicId" type="text">
+                        <p style="font-size: 0.8em" class="col-12">(users using a fake epic
+                            usename will be ban)</p>
+                    </div>
+
+                    <!-- Selects parts -->
+                    <!-- Region-->
+                    <div class="form-group">
+                        <label class="text-sign-up">Region</label>
+                        <select name="region" v-model="selectedRegion" class="col-3">
+                            <option v-for="region in regions" v-bind:value="region.value">
+                                {{ region.region | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Country -->
+                    <div class="form-group">
+                        <label class="text-sign-up">Country</label>
+                        <select name="country" v-model="selectedCountry" class="col-3">
+                            <option v-for="country in countrys" v-bind:value="country.value">
+                                {{ country.country | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+                    <!-- Platform -->
+                    <div class="form-group">
+                        <label class="text-sign-up">Plateform</label>
+                        <select name="platform" v-model="selectedPlatform" class="col-3">
+                            <option v-for="platform in platforms" v-bind:value="platform.value">
+                                {{ platform.platform | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- Captcha -->
+                    <div class="g-recaptcha" data-sitekey="6Lc7JXUUAAAAAODDPKrOXJ03xu-2JtM4gc7xM8CJ"></div>
+
+                    <div class="input-group mb-5">
+                        <button type="submit" v-on:click="showSignPage = true" class="space-input btn button-blue col-md-6">Sign
+                            Up
+                        </button>
+                        <button type="button" v-on:click="showSignPage = false" class="space-input btn button-red col-md-6">Exit</button>
+                    </div>
+
+                </div>
+            </div>
+        </form>
+
+
+        <!-- sign-Up is ok  -->
+        <div class="surcouche col-md-12" v-show="signUpOk">
+            <div class="login col-md-6 offset-md-3 col-xl-4 offset-xl-4">
+                <center>
+                    <h2>Thanks for joining Buildfight!</h2>
+                    <p>You successfully signed up. A confirmation email has been sent to you, check in your spams if
+                        you can't find it.</p>
+                    <p style="font-size: 0.8em">(If account isn't activated within 24 hours it will be automatically
+                        destroyed)</p>
+                </center>
+                <button class="space-input btn button-blue col-md-10 offset-md-1" v-on:click="signUpOk = false">Ok</button>
+            </div>
+        </div>
+
+        <!-- position de la page  -->
+        <div class="position-indicator" v-show="showButtons">
+            <a id="pin-1" class="fas fa-circle col-12 mb-2" onclick="activePin('pin-1')" style="font-size: 0.8em; color:#FFFFFF91; filter: drop-shadow(0 0 0 #FFCE54); margin-left: 3px;"></a>
+            <a id="pin-2" class="far fa-circle col-12 mb-2" onclick="activePin('pin-2')" style="font-size: 0.8em; color:#FFFFFF91; filter: drop-shadow(0 0 0 #FFCE54); margin-left: 3px;"></a>
+            <a id="pin-3" class="far fa-circle col-12 mn-2" onclick="activePin('pin-3')" style="font-size: 0.8em; color:#FFFFFF91; filter: drop-shadow(0 0 0 #FFCE54); margin-left: 3px;"></a>
+            <a id="pin-4" class="far fa-circle col-12 mn-2" onclick="activePin('pin-4')" style="font-size: 0.8em; color:#FFFFFF91; filter: drop-shadow(0 0 0 #FFCE54); margin-left: 3px;"></a>
+        </div>
+
+        <!-- choix des rooms -->
+        <div class="block-perspective wallpaper" v-show="showButtons">
+            <div class="grid enableScroll"></div>
+            <div class="background-logo block-perspective">
+                <div class="fade-in-fwd enableScroll">
+                    <img draggable="false" src="/assets/img/logo.svg" class="logo-big col-md-4 offset-md-4 col-sm-12" />
+                </div>
+            </div>
+            <div class="col-1 offset-11 p-0 social-hub bounce-in-right">
+                <a href="https://discord.gg/ctBqW6b" target="_blank" class="icon fab fa-discord col-12 mb-2 social-top"></a>
+                <a href="https://www.facebook.com/buildfightOfficial/?fb_dtsg_ag=AdxJomMA1tlgl4p6BsMODJkO_XTG2CW-JpCHeH1xn56c3Q%3AAdw_WDu9Jofytckc--_MApmuR05UumPigt6VNIt7EzSh4Q"
+                    target="_blank" class="icon fab fa-facebook col-12 mb-2 social-top"></a>
+                <a href="https://twitter.com/buildfightcom" target="_blank" class="icon fab fa-twitter col-12 mn-2 social-top"></a>
+                <a href="https://www.instagram.com/buildfight.official/" target="_blank" class="icon fab fa-instagram col-12 mn-2 social-top"></a>
+            </div>
+
+            <div class="page-height owl-carousel enableScroll m-4">
+                <!-- compte a rebours -->
+                <center class="pulsate-bck">
+                    <NOBR>
+                        <h1 class="countdown" id="demo"></h1>
+                    </NOBR>
+                </center>
+                <center>
+                    <NOBR>
+                        <h1 class="countdown" style="font-size: calc(20px + 3.4vw);">HOURS | MINUTES | SECONDS</h1>
+                    </NOBR>
+                </center>
+
+                <script>
+                    // Set the date we're counting down to
+                    var countDownDate = new Date("Oct 19, 2018 18:00:00").getTime();
+                    // Update the count down every 1 second
+                    var x = setInterval(function () {
+                        // Get todays date and time
+                        var now = new Date().getTime();
+                        // Find the distance between now and the count down date
+                        var distance = countDownDate - now;
+                        // Time calculations for days, hours, minutes and seconds
+                        var days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                        var hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        var minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                        var seconds = Math.floor((distance % (1000 * 60)) / 1000);
+                        // Output the result in an element with id="demo"
+                        document.getElementById("demo").innerHTML = hours + " : "
+                            + minutes + " : " + seconds + "";
+                        // If the count down is over, write some text 
+                        if (distance < 0) {
+                            clearInterval(x);
+                            document.getElementById("demo").innerHTML = "LET'S GO TO FIGHT";
+                        }
+                    }, 1000);
+                </script>
+                <button class="bulle" v-show="showIntroMsg" v-on:click="showHideIntro()">
+                    <div class="content-bulle">
+                        <h1 style="font-size: 1.1em">Welcome to <strong>buildfight</strong>.com, this tool will
+                            allow you to find opponents
+                            easily in the
+                            <strong>playground</strong> mode of <strong>Fortnite</strong> Battle Royal,
+                            choose your game mode to find an opponent. Have fun !</h1>
+                    </div>
+                </button>
+                <img draggable="false" class="lama" v-on:click="showHideIntro()" src="/assets/img/lama-sm.png">
+            </div>
+            <div id="page-2" class="page-height cinema enableScroll col-12 video-container" style="margin-top: 50vh">
+                <div class="video-container">
+                    <iframe width="640" height="360" src="https://www.youtube.com/embed/mZly5L8bMt0" frameborder="0"
+                        allow="autoplay; encrypted-media" allowfullscreen="allowfullscreen" class="d-xl-none d-block center video fr col-10 offset-1"></iframe>
+                    <iframe width="1024" height="480" src="https://www.youtube.com/embed/mZly5L8bMt0" frameborder="0"
+                        allow="autoplay; encrypted-media" allowfullscreen="allowfullscreen" class="d-none d-xl-block center video fr col-8 offset-2"></iframe>
+                </div>
+            </div>
+
+            <!-- TIPS AND RULES -->
+            <div class="page-height enableScroll dev-blog rules col-12" style="margin-top: 100vh" id="page-3">
+                <div class="grid"></div>
+                <div class="col-12 title">TIPS AND RULES</div>
+                <div class="natural-scroll">
+                    <div class="col-10 offset-1 news bounce-in-fwd row">
+                        <div class="col-12">
+                            <h2 style="font-family: 'cartoon'; color: #FFFE55">Tips</h3>
+                                <ul>
+                                    <li>Only the host’s room can be joined</li>
+                                    <li>The host has to invite the other players of the room</li>
+                                    <li>You can add the players of the room with the button next to their login</li>
+                                    <li>- The first button copies the EPIC name of the player</li>
+                                    <li>- The second one adds the player directly through the official website</li>
+                                    <li>You can vote for the rule to be applied during the game. You can find an
+                                        agreement about the rules, if all the players agree. Be indulgent!</li>
+                                    <li>If several rules have the same amount of votes, rule B1 will be applied.
+                                        Otherwise, the rule chosen by the votes will be applied.</li>
+                                    <li>The start position should be in rows, with a width of one board between the
+                                        players, and not face to face.</li>
+                                    <li>The start distance is between 3 and 15 boards.</li>
+                                </ul>
+                        </div>
+                        <div class="col-12">
+                            <h2 style="font-family: 'cartoon'; color: #FFFE55">Rules</h3>
+                                <ul>
+                                    <h3 style="font-family: 'cartoon
+    '">B1</h3>
+                                    <li>7 minutes looting.</li>
+                                    <li>All weapons except explosive ones.</li>
+                                    <li>Bouncing grenades, plunger gun and jetpack forbidden.</li>
+                                    <li>Shield use is to be voted in the discussion room. If no agreement is found,
+                                        shield use is forbidden.</li>
+                                    <li>Potion use is forbidden (unless specifically agreed by the players)</li>
+                                    <li>The players can chose the meeting point. If no agreement is found, <strong>Tilted
+                                            Towers</strong> will be chosen. The alley between Big Ben and the truck
+                                        often containing
+                                        a chest will be the place of the <strong>build battle</strong>.</li>
+                                    <li>The start of the fight must be defined by all the players, at least 10 seconds
+                                        before, via the chronometer.</li>
+                                    <li>It is forbidden to pick up a dead player’s loot.</li>
+                                    <li>Ammo and materials can be picked up by the <strong>build fight</strong>’s
+                                        winner, but he MUST
+                                        divide it by two.</li>
+                                    <li>After the <strong>buildbattle</strong>, the surviving players must wait for the
+                                        other players to
+                                        get their loot back and to get down from the build if necessary.</li>
+                                    <li>Be flexible, let them farm and loot up to 2 or 3 minutes.</li>
+                                </ul>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <ul>
+                                <h3 style="font-family: 'cartoon
+'">B2</h3>
+                                <li>Same as B1, but all weapons and gadgets are authorised.</li>
+                            </ul>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <ul>
+                                <h3 style="font-family: 'cartoon
+'">B3</h3>
+                                <li>No rules. Pure anarchy !</li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!--- DEV BLOG  -->
+            <div class="page-height enableScroll dev-blog col-12" style="margin-top: 100vh; height: 80vh" id="page-4">
+                <div class="grid" style="bottom: 50vh;"></div>
+                <img draggable="false" v-bind:src="chestPath" class="chest chestAnim" v-on:click="openChest()" v-show="showChest">
+                <div v-show="showDevBlog">
+                    <div class="col-12 title bounce-in-top">DEV BLOG</div>
+                    <div class="col-10 offset-1 news natural-scroll bounce-in-fwd">
+                        <h2><b style="font-family: 'cartoon'; color: #FFFE55">NEXT FEATURES</b></h2>
+                        News to come:
+                        <ul style="color:rgb(233, 233, 233)">
+                            <li>More filters for an improved research</li>
+                            <li>A creative mode to build awesome structures with other players</li>
+                            <li>Regular tournaments</li> <!-- !!!! handek !!!! -->
+                            <li>Rewards system</li>
+                            <li>More cool stuff</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="enableScroll partnairs">
+                <div class="row footer col-12 remove-marge">
+                    <div class="row col-md-8 offset-md-2">
+                        <div class="col-md-6 offset-md-3">
+                            <h3>Join The Community</h3>
+                            <a href="https://discord.gg/ctBqW6b" target="_blank" class="icon fab fa-discord p-2" style="font-size: 2.5em;"></a>
+                            <a href="https://www.facebook.com/buildfightOfficial/?fb_dtsg_ag=AdxJomMA1tlgl4p6BsMODJkO_XTG2CW-JpCHeH1xn56c3Q%3AAdw_WDu9Jofytckc--_MApmuR05UumPigt6VNIt7EzSh4Q"
+                                target="_blank" class="icon fab fa-facebook p-2" style="font-size: 2.5em;"></a>
+                            <a href="https://twitter.com/buildfightcom" target="_blank" class="icon fab fa-twitter p-2"
+                                style="font-size: 2.5em;"></a>
+                            <a href="https://www.instagram.com/buildfight.official/" target="_blank" class="icon fab fa-instagram p-2"
+                                style="font-size: 2.5em;"></a>
+                            <a href="mailto:contact@buildfight.com" target="_blank" class="icon fas fa-at p-2" style="font-size: 2.5em;"></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page du chat -->
+        <div v-show="showChat" class="page-chat">
+            <div class="grid"></div>
+            <div class="row remove-marge wallpaper" style="padding-bottom: 10vh">
+                <div class="fade-in-fwd  col-12 remove-marge row">
+                    <div class="col-12">
+                        <div class="picContainer your-skin">
+                            <i v-if="host" style="position: absolute; color: #FFFF01" class="fas fa-star"></i>
+                            <div v-on:click="showLocker = true;" v-bind:class="'team-' + position + ' profilePic your-skin'"
+                                v-bind:style="{ 'background-image': 'url(/assets/img/skins/'+ skinId +'.png)'  }"></div>
+                        </div>
+                    </div>
+                    <!-- Button -->
+                    <div class="col-10 offset-1"><button type="button" class="col-10 offset-1 col-sm-6 col-md-4 offset-sm-3 offset-md-4 col-xl-2 offset-xl-5 btn btn button-red rotate2 btn-lg btn-block vert-align"
+                            v-on:click="goHome();" style="margin-bottom:30px; margin-top:50px;">LEAVE ROOM</button></div>
+
+                    <div class="col-7 col-md-2 col-xl-2 offset-md-3 offet-2 stickers-parent">
+                        <div class="stickers col-12"> #{{actualRoom}} </div>
+                    </div>
+                    <div class="col-sm-12 d-block d-md-none espace-vide"></div>
+                    <div class="col-6 col-md-2 offset-md-3 offset-lg-3 offset-xl-3 offset-3 text-center add-friend">
+                        <div> {{roomStatus}}
+                            <NOBR v-if="roomStatus == 'WAIT PLAYERS' || roomStatus == '1 PLAYER FOUND, WAIT FOR 2 PLAYERS' || roomStatus == '2 PLAYERS FOUND, WAIT FOR 1 PLAYER'">
+                                <span>
+                                    <span class="loader__dot">.</span>
+                                    <span class="loader__dot">.</span>
+                                    <span class="loader__dot">.</span>
+                                </span>
+                            </NOBR>
+                        </div>
+                    </div>
+                    <i class="arrow-down text-center col-6 col-md-2 offset-md-8 offset-3 fas fa-caret-down "></i>
+
+                    <img draggable="false" src="/assets/img/logo.svg" class="logo-trans col-md-4 offset-md-4" />
+                    <div class="chat-box col-12 col-md-5 col-9 offset-md-3 order-3 order-md-1">
+                        <div class="msgs break-word">
+                            <div class="alignement" v-for="(msg,index) in msgs" v-if="msg.auteur == true">
+                                <p class="envoi">{{msg.content}}</p>
+                            </div>
+                            <div v-else>
+                                <div class="authour" v-if="index > 0 && msgs[index - 1].name != msg.name">{{msg.name}}
+                                </div>
+                                <div class="authour" v-if="index == 0">{{msg.name}} </div>
+                                <p class="reception">{{msg.content}} </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mates-box col-12 col-md-2 order-2 order-md-2 row remove-marge">
+                        <div class="col-12 row remove-marge" style="max-height: 15em;">
+                            <div v-for="(mate, index) in mates" v-if="mate != epicId" class="col-4 col-md-12 remove-marge">
+                                <div class="picContainer">
+                                    <i v-if="index == 0" style="position: absolute; color: #FFFF01" class="fas fa-star"></i>
+                                    <div v-if="actualRoom == '2 vs 2'" v-bind:class="'profilePic team-' + (partyColor[index]) + ''"
+                                        v-bind:style="{ 'background-image': 'url(/assets/img/skins/'+ matesSkins[index] +'.png)'  }"></div>
+                                    <div v-else v-bind:class="'profilePic team-' + (index + 1) + ''" v-bind:style="{ 'background-image': 'url(/assets/img/skins/'+ matesSkins[index] +'.png)'  }"></div>
+                                </div>
+                                <center>
+                                    <div v-bind:class="'flag-icon-' + matesCountrys[index]" style="width: 1.3em; height: 0.8em; background-size: cover; display: inline-block"></div>
+                                    <span v-bind:id="mate">{{mate}}
+                                        <i v-on:click="copy(mate)" class="fas fa-paste icon paste"></i>
+                                        <i v-on:click="addFriend(mate)" class="fas fa-user-plus icon"></i>
+                                        <i v-on:click="showReportPage = true" class="fas fa-exclamation-circle icon"
+                                            style="color: #EE2F5A"></i>
+                                    </span>
+                                </center>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-5 order-3">
+                        <input class="chat-input form-control col-md-5 offset-md-3 col-9" v-model="newMsg" placeholder="Type message here..."
+                            v-on:keyup.enter="sendMsg">
+                        <button class="chat-button btn btn-outline-light col-md-2 col-lg-2 col-3" v-on:click="sendMsg">Send</button>
+                    </div>
+                </div>
+            </div>
+            <!-- footer -->
+            <div id="page-3" class="row footer col-12 remove-marge">
+                <div class="row col-md-8 offset-md-2">
+                    <div class="col-md-4 offset-md-4">
+                        <h3>Join The Community</h3>
+                        <a href="https://discord.gg/ctBqW6b" target="_blank" class="icon fab fa-discord p-2" style="font-size: 2.5em;"></a>
+                        <a href="https://www.facebook.com/buildfightOfficial/?fb_dtsg_ag=AdxJomMA1tlgl4p6BsMODJkO_XTG2CW-JpCHeH1xn56c3Q%3AAdw_WDu9Jofytckc--_MApmuR05UumPigt6VNIt7EzSh4Q"
+                            target="_blank" class="icon fab fa-facebook p-2" style="font-size: 2.5em;"></a>
+                        <a href="https://twitter.com/?lang=fr" target="_blank" class="icon fab fa-twitter p-2" style="font-size: 2.5em;"></a>
+                        <a href="https://www.instagram.com/buildfight.official/" target="_blank" class="icon fab fa-instagram p-2"
+                            style="font-size: 2.5em;"></a>
+                        <a href="mailto:contact@buildfight.com" target="_blank" class="icon fas fa-at p-2" style="font-size: 2.5em;"></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+
+    <script src="/src/vuejs/components/register_vue.js"></script>
+    <script src="/src/vuejs/components/global_vue.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue-resource/1.5.1/vue-resource.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T"
+        crossorigin="anonymous"></script>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script src="/src/socket/socketEvent.js"></script>
+    <script src="/assets/js_dom/script.js"></script>
+    <script src="/assets/js_dom/ajax_settings.js"></script>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-127559899-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'UA-127559899-1');
+        $('body').removeClass("d-none");
+    </script>
+</body>
+
+</html>

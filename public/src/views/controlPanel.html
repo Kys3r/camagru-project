@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/2.5.16/vue.js"></script>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale = 1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>BuildFight</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-WskhaSGFgHYWDcbwN70/dfYBj47jz9qbsMId/iRN3ewGhXQFZCSftd1LZCfmhktB"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css" integrity="sha384-hWVjflwFxL6sNzntih27bfxkr27PmbbK/iSvJ+a4+0owXq79v+lsFkW54bOGbiDQ"
+        crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.2.0/css/flag-icon.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="/assets/css/animation.css">
+    <link rel="stylesheet" type="text/css" href="/assets/css/style.css">
+    <link rel="icon" type="image/png" href="/assets/img/favicon.png">
+    <script src="/src/vuejs/lib/filter_vue.js"></script>
+    <script src='https://www.google.com/recaptcha/api.js'></script>
+</head>
+
+<body class="background" style="overflow: hidden;" onload="setPin()">
+
+    <div id="transition-page" class=""></div>
+    <div id="app">
+        <!-- barre de navigation -->
+        <nav class="navbar-color navbar enableScroll" id="page-1">
+            <img src="/assets/img/Buldfight_Logo-texte_blanc.svg" v-on:click="goHome()" class="logo" />
+            <form v-on:submit.prevent="logout" id='logout'>
+                <button v-if="authentified" type="submit" name="submit" class="icon fas fa-sign-out-alt" style="border: none; background: none; outline: none;"></button>
+                <i v-if="!authentified" v-on:click="showLogPage = true" class="icon fas fa-user"></i>
+                <i v-if="authentified && paramButton" v-on:click="showParamPage = true" class="icon fas fa-bars"></i>
+                <i v-if="authentified" onclick="socket.emit('serverInfos')" class="icon fas fa-toolbox"></i>
+            </form>
+        </nav>
+
+        <!-- page de conection -->
+        <div id="success-alert" class="notification col-10 offset-1 col-sm-4 col-xl-3 offset-sm-8 offset-xl-9">{{notification}}</div>
+        <form v-on:submit.prevent="signIn">
+            <div class="surcouche col-md-12" v-show="showLogPage">
+                <div class="login col-md-6 offset-md-3 col-xl-4 offset-xl-4">
+                    <p>Please enter your email and password</p>
+                    <input v-model="username" name="username" type="text" class="form-control col-md-10 offset-md-1"
+                        placeholder="Login" pattern="[a-zA-Z0-9]{3,16}" required title="Only alphabet characters | 3 - 16 characters">
+                    <input v-model="password" name="password" type="password" class="space-input form-control col-md-10 offset-md-1" 
+						pattern="[a-zA-Z0-9$+,:;=?@#|'<>.^*()%!-]{8,}" required title="Minimum 8 characters + 2 numbers">
+                    <div class="col-md-10 offset-md-1 m-3">
+                        <a href="#" v-on:click="showLogPage = false; showSignPage = true">Register</a> -
+                        <a href="#" v-on:click="showLogPage = false; showPwdForget = true">Forgot Password</a>
+                    </div>
+                    <div class="row">
+                        <button type="submit" class="btn button-blue col-6 col-xl-4 offset-xl-2">Login</button>
+                        <button class="btn button-red col-6 col-xl-4" type="button" v-on:click="showLogPage = false">Exit</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <!-- Password forget -->
+        <div class="surcouche col-md-12" v-show="showPwdForget">
+            <div class="login col-12 col-md-4 offset-md-4 col-xl-2 offset-xl-5">
+                <form id="forget_password" method="post">
+                    <div class="m-3">
+                        <label class="text-sign-up">Enter your email</label>
+                        <input type="text" name="email_forget_form" class="form-control">
+                    </div>
+                    <div class="row">
+                        <button class="btn button-blue col-6" type="submit" name="button" v-on:click="showPwdForget = false; mailIsSended = true">Send
+                            email</button>
+                        <button class="btn button-red col-6" type="button" v-on:click="showPwdForget = false; mailIsSended = true">Exit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <!-- password is sended -->
+        <div class="surcouche col-md-12" v-if="mailIsSended">
+            <div class="login col-12 col-md-4 offset-md-4 col-xl-2 offset-xl-5">
+                <div class="col-12 p-0 mb-3">An email will be sent to this account shortly.</div>
+                <button class="btn button-red col-12" type="button" v-on:click="mailIsSended = false">Ok</button>
+            </div>
+        </div>
+        <!-- New password -->
+
+        <div class="surcouche col-md-12" v-show="showNewPwd">
+            <div class="login col-12 col-md-4 offset-md-4 col-xl-2 offset-xl-5">
+                <div class="signInAlert p-1" v-show="selectedError != undefined" style="color: white;">
+                    <center><i class="fas fa-exclamation-triangle" style="padding: 10px;"></i><span>{{
+                            errorSignUp[selectedError]
+                            }}
+                        </span></center>
+                </div>
+                <form v-on:submit.prevent="removePass">
+                    <label class='text-sign-up'>New Password</label>
+                    <input v-model="password" name='new_pwd' class="col-12" type='password' pattern="[a-zA-Z0-9$+,:;=?@#|'<>.^*()%!-]{8,}" required title="Minimum 8 characters + 2 numbers">
+                    <label class='text-sign-up'>Password verification</label>
+                    <input v-model="confirmPass" name='confirm_pwd' class="col-12" type='password' pattern="[a-zA-Z0-9$+,:;=?@#|'<>.^*()%!-]{8,}" required title="Minimum 8 characters + 2 numbers">
+                    <button type='submit' name="token" v-bind:value="token">send</button>
+                </form>
+            </div>
+        </div>
+        <!-- Casier -->
+        <div class="surcouche col-md-12" v-show="showLocker">
+            <div class="login col-md-6 offset-md-3 col-xl-4 offset-xl-4 row">
+                <div v-for="skin in locker">
+                    <button class="locker-skin btn" v-on:click="skinId = skin" v-bind:style="{ 'background-image': 'url(/assets/img/skins/'+ skin +'.png)'}"></button>
+                </div>
+                <form v-on:submit.prevent="skin" id='skin' class="col-12 remove-marge">
+                    <button type="submit" v-on:click="showLocker = false" class="btn button-blue col-12">Ok</button>
+                </form>
+            </div>
+            <!-- control panel -->
+        </div>
+        <div class="surcouche col-md-12" v-if="showPanel">
+            <div class="login col-md-6 offset-md-3 col-xl-4 offset-xl-4">
+                <center>
+                    <h3>Control Panel</h3>
+                </center>
+                <div>Users online : {{data.nbOfUsers}}</div>
+                <div>Numbers of 1 vs 1 room : {{data.nbOfUsers}}</div>
+                <div>Numbers of 2 vs 2 room: {{data.nbOfUsers}}</div>
+                <div>Numbers of FFA room : {{data.nbOfUsers}}</div>
+                <div>Users online:<select>
+                        <option v-for="user in data.usersOnline" v-bind:value="user">
+                            {{ user }}
+                        </option>
+                    </select></div>
+                <button type="button" v-on:click="showPanel = false" class="space-input btn button-red col-md-6 offset-md-3">Exit</button>
+            </div>
+        </div>
+        <!-- setting user -->
+
+        <div class="surcouche col-md-12" v-show="showParamPage" style="overflow: scroll;">
+            <div class="param col-md-8 offset-md-2 col-xl-6 offset-xl-3">
+                <div class="signInAlert p-1" v-show="selectedError != undefined" style="color: white;">
+                    <center><i class="fas fa-exclamation-triangle" style="padding: 10px;"></i>
+                        <span>
+                            {{errorSignUp[selectedError]}}
+                        </span></center>
+                </div>
+                <!-- Username -->
+                <form id="username_setting" class="col-12 row" method="post">
+                    <div class="col-12 col-md-6">
+                        <label class="text-sign-up">Login</label>
+                        <input name="username" v-model="username" autofocus type="text" class="form-control"
+                            placeholder="3 characters minimum - 16 maximum" pattern="[a-zA-Z0-9]{3,16}" required title="Only alphabet characters | 3 - 16 characters">
+                    </div>
+                    <button type="submit" class="space-input btn button-blue col-12 col-md-6">Change login</button>
+                </form>
+                <!-- Email parts -->
+                <form id="email_setting" class="col-12 row" method="post">
+                    <div class="col-12 col-md-6">
+                        <label class="text-sign-up">Email</label>
+                        <input name="email" type="email" class="form-control" id="email" required title=""
+                            aria-describedby="emailHelp" placeholder="Enter email">
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <label class="text-sign-up">Confirm email</label>
+                        <input name="email_confirm" type="email" class="form-control" id="confirm-email"
+                            aria-describedby="emailHelp" placeholder="Confirm email">
+                    </div>
+                    <button type="submit" class="space-input btn button-blue col-12 col-md-6 offset-md-6">Change Email</button>
+                </form>
+                <!-- Password parts -->
+                <form id="password_setting" class="col-12 remove-marge" method="post">
+                    <div>
+                        <label class="text-sign-up">Actual Password</label>
+                        <input name="actual_pwd" type="password" class="space-input form-control col-12 col-md-6" pattern="[a-zA-Z0-9$+,:;=?@#|'<>.^*()%!-]{8,}" required title="Minimum 8 characters + 2 numbers">
+                        <label class="text-sign-up">New password</label>
+                        <input v-model="password" name="pwd" type="password" class="space-input form-control col-12 col-md-6" pattern="[a-zA-Z0-9$+,:;=?@#|'<>.^*()%!-]{8,}" required title="Minimum 8 characters + 2 numbers">
+                        <small class="form-text text-muted">Minimum 6 characters + 2 numbers</small>
+
+                        <label class="text-sign-up">Confirm new password</label>
+                        <div class="col-12 row">
+                            <input v-model="confirmPass" name="pwd_confirm" type="password" class="space-input form-control col-12 col-md-6" pattern="[a-zA-Z0-9$+,:;=?@#|'<>.^*()%!-]{8,}" required title="Minimum 8 characters + 2 numbers">
+
+                            <button type="submit" class="space-input btn button-blue col-12 col-md-6">Change Password</button>
+                        </div>
+                    </div>
+
+                </form>
+                <!-- Selects parts -->
+                <!-- Region-->
+                <form id="region_setting" class="col-12 row" method="post">
+                    <div class="form-group col-12 col-md-6">
+                        <label class="text-sign-up">Region</label>
+                        <select name="region" v-model="selectedRegion">
+                            <option v-for="region in regions" v-bind:value="region.value">
+                                {{ region.region | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+                    <button type="submit" class="space-input btn button-blue col-12 col-md-6">Change Region Server</button>
+                </form>
+
+                <!-- Language-->
+                <form id="language_setting" class="col-12 row" method="post">
+                    <div class="form-group col-12 col-md-6">
+                        <label class="text-sign-up">Language</label>
+                        <select name="language" v-model="selectedLanguage">
+                            <option v-for="language in languages" v-bind:value="language.value">
+                                {{ language.language | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+                    <button type="submit" class="space-input btn button-blue col-12 col-md-6">Change Language</button>
+                </form>
+
+                <!-- Country -->
+                <form id="country_setting" class="col-12 row" method="post">
+                    <div class="form-group col-12 col-md-6">
+                        <label class="text-sign-up">Country</label>
+                        <select name="country" v-model="selectedCountry">
+                            <option v-for="country in countrys" v-bind:value="country.value">
+                                {{ country.country | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+                    <button type="submit" class="space-input btn button-blue col-12 col-md-6">Change Country</button>
+                </form>
+
+                <!-- City -->
+                <form id="city_setting" class="col-12 row" method="post">
+                    <div class="form-group col-12 col-md-6">
+                        <label class="text-sign-up">Favorite Fortnite's city</label>
+                        <select name="city" v-model="selectedCity">
+                            <option v-for="city in citys" v-bind:value="city.value">
+                                {{ city.city | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+                    <button type="submit" class="space-input btn button-blue col-12 col-md-6">Change Favorite City</button>
+                </form>
+
+                <!-- Platform -->
+                <form id="platform_epic_setting" class="col-12 row" method="post">
+                    <div class="form-group col-12 col-md-6">
+                        <label class="text-sign-up">Plateform</label>
+                        <select name="platform" v-model="selectedPlatform">
+                            <option v-for="platform in platforms" v-bind:value="platform.value">
+                                {{ platform.platform | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+                    <!-- Epic account -->
+                    <div v-if="selectedPlatform == 'SM' || selectedPlatform == 'SW'" class="col-12 col-md-6">
+                        <label class="text-sign-up">Epic account</label>
+                        <input name="epic_account" v-model="epicId" type="text" class="form-control" placeholder="Epic account" pattern="[a-zA-Z0-9-_\s]{3,}" required title="Only alphanumeric and space / '-' / '_' authorized)">
+                    </div>
+                    <div v-if="selectedPlatform == 'SM' || selectedPlatform == 'SW'" class="col-12 col-md-6"></div>
+                    <button type="submit" class="space-input btn button-blue col-12 col-md-6">Change Platform</button>
+                    <button class="btn button-red col-4 offset-4" type="button" v-on:click="showParamPage = false;">Exit</button>
+                </form>
+            </div>
+        </div>
+
+        <!--Formulaire d'inscription -->
+        <form v-on:submit.prevent="signUp">
+            <div class="surcouche col-md-12 register" v-show="showSignPage">
+                <div class="param col-md-6 offset-md-3 col-xl-4 offset-xl-4">
+                    <!-- Username -->
+                    <div class="signInAlert p-1" v-show="selectedError != undefined" style="color: white;">
+                        <center><i class="fas fa-exclamation-triangle" style="padding: 10px;"></i><span>{{
+                                errorSignUp[selectedError]
+                                }}
+                            </span></center>
+                    </div>
+                    <div class="">
+                        <label class="text-sign-up">Login</label>
+						<input type="text" name="username" class="form-control" v-model="username" placeholder="Login"
+                            pattern="[a-zA-Z0-9]{3,16}" required title="Only alphabet characters | 3 - 16 characters" autofocus>
+                    </div>
+                    <!-- Email parts -->
+                    <div class="">
+                        <label class="text-sign-up">Email</label>
+                        <input v-model="email" name="email" type="email" class="form-control" id="email-setting"
+                            required title="" aria-describedby="emailHelp" placeholder="Enter email">
+                    </div>
+                    <div class="">
+                        <label class="text-sign-up">Confirm email</label>
+                        <input v-model="confirmMail" name="email_confirm" type="email" class="form-control" id="confirm-email-setting"
+                            aria-describedby="emailHelp" placeholder="Confirm email">
+                    </div>
+                    <!-- Password parts -->
+                    <div class="">
+                        <label class="text-sign-up">Password</label>
+                        <input v-model="password" name="pwd" type="password" pattern="[a-zA-Z0-9$+,:;=?@#|'<>.^*()%!-]{8,}" required title="Minimum 8 characters + 2 numbers" class="space-input form-control">
+                        <small class="form-text text-muted">Minimum 6 characters + 2 numbers</small>
+                        <label class="text-sign-up">Confirm password</label>
+                        <input v-model="confirmPass" name="pwd_confirm" type="password" pattern="[a-zA-Z0-9$+,:;=?@#|'<>.^*()%!-]{8,}" required title="Minimum 8 characters + 2 numbers">
+                    </div>
+                    <!-- Selects parts -->
+                    <!-- Region-->
+                    <div class="form-group">
+                        <label class="text-sign-up">Region</label>
+                        <select name="region" v-model="selectedRegion">
+                            <option v-for="region in regions" v-bind:value="region.value">
+                                {{ region.region | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+                    <!-- Language-->
+                    <div class="form-group">
+                        <label class="text-sign-up">Language</label>
+                        <select name="language" v-model="selectedLanguage">
+                            <option v-for="language in languages" v-bind:value="language.value">
+                                {{ language.language | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+                    <!-- Country -->
+                    <div class="form-group">
+                        <label class="text-sign-up">Country</label>
+                        <select name="country" v-model="selectedCountry">
+                            <option v-for="country in countrys" v-bind:value="country.value">
+                                {{ country.country | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+                    <!-- City -->
+                    <div class="form-group">
+                        <label class="text-sign-up">Favorite Fortnite's city</label>
+                        <select name="city" v-model="selectedCity">
+                            <option v-for="city in citys" v-bind:value="city.value">
+                                {{ city.city | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+                    <!-- Platform -->
+                    <div class="form-group">
+                        <label class="text-sign-up">Plateform</label>
+                        <select name="platform" v-model="selectedPlatform">
+                            <option v-for="platform in platforms" v-bind:value="platform.value">
+                                {{ platform.platform | capitalize }}
+                            </option>
+                        </select>
+                    </div>
+                    <!-- Epic account -->
+                    <div v-if="selectedPlatform == 'SM' || selectedPlatform == 'SW'">
+                        <label class="text-sign-up">Epic account</label>
+                        <input name="epic_account" pattern="[a-zA-Z0-9-_\s]{3,}" required title="Only alphanumeric and space / '-' / '_' authorized)"
+                            v-model="epicId" type="text" class="form-control" placeholder="Epic account">
+                    </div>
+                    <!-- Captcha -->
+                    <div class="g-recaptcha" data-sitekey="6Ld5ZGwUAAAAAF2kj_ouHvOpl1d3Lpt0XppPBYHJ"></div>
+
+                    <div class="input-group mb-5">
+                        <button type="submit" v-on:click="showSignPage = true" class="space-input btn button-blue col-md-6">Sign
+                            Up
+                        </button>
+                        <button type="button" v-on:click="showSignPage = false" class="space-input btn button-red col-md-6">Exit</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <!-- sign-Up is ok  -->
+
+        <div class="surcouche col-md-12" v-show="signUpOk">
+            <div class="login col-md-6 offset-md-3 col-xl-4 offset-xl-4">
+                <center>
+                    <h2>Thanks for joining Buildfight!</h2>
+                    <p>Please check your email to activate your subscription</p>
+                </center>
+                <button v-on:click="signUpOk = false" class="space-input btn button-blue col-md-10 offset-md-1">Ok</button>
+            </div>
+        </div>
+
+        <!-- position de la page  -->
+
+        <div class="position-indicator" v-show="showButtons">
+            <a class="fas fa-circle col-12 mb-2" style="font-size: 0.8em; color:#FFFFFF91; filter: drop-shadow(0 0 0 #FFCE54); margin-left: 3px;"
+                id="pin-1" onclick="activePin('pin-1')"></a>
+            <a class="far fa-circle col-12 mb-2" style="font-size: 0.8em; color:#FFFFFF91; filter: drop-shadow(0 0 0 #FFCE54); margin-left: 3px;"
+                id="pin-2" onclick="activePin('pin-2')"></a>
+            <a class="far fa-circle col-12 mn-2" style="font-size: 0.8em; color:#FFFFFF91; filter: drop-shadow(0 0 0 #FFCE54); margin-left: 3px;"
+                id="pin-3" onclick="activePin('pin-3')"></a>
+            <a class="far fa-circle col-12 mn-2" style="font-size: 0.8em; color:#FFFFFF91; filter: drop-shadow(0 0 0 #FFCE54); margin-left: 3px;"
+                id="pin-4" onclick="activePin('pin-4')"></a>
+            <a class="far fa-circle col-12 mn-2" style="font-size: 0.8em; color:#FFFFFF91; filter: drop-shadow(0 0 0 #FFCE54); margin-left: 3px;"
+                id="pin-5" onclick="activePin('pin-5')"></a>
+        </div>
+
+        <!-- choix des rooms -->
+        <div v-show="showButtons" class="block-perspective wallpaper2">
+            <div class="grid enableScroll"></div>
+            <div class="background-logo">
+                <div class="fade-in-fwd enableScroll">
+                    <img src="/assets/img/logo.svg" class="logo-big col-md-4 offset-md-4 col-sm-12" />
+                </div>
+            </div>
+            <div class="col-1 offset-11 p-0 social-hub bounce-in-right">
+                <a href="https://discord.gg/ctBqW6b" target="_blank" class="icon fab fa-discord col-12 mb-2 social-top"></a>
+                <a href="https://www.facebook.com/buildfightOfficial/?fb_dtsg_ag=AdxJomMA1tlgl4p6BsMODJkO_XTG2CW-JpCHeH1xn56c3Q%3AAdw_WDu9Jofytckc--_MApmuR05UumPigt6VNIt7EzSh4Q"
+                    target="_blank" class="icon fab fa-facebook col-12 mb-2 social-top"></a>
+                <a href="https://twitter.com/?lang=fr" target="_blank" class="icon fab fa-twitter col-12 mn-2 social-top"></a>
+                <a href="https://www.instagram.com/buildfight.official/" target="_blank" class="icon fab fa-instagram col-12 mn-2 social-top"></a>
+            </div>
+
+            <div class="page-height owl-carousel enableScroll m-4">
+                <button type="button" class="col-md-4 offset-md-4 col-8 offset-2 btn btn button-yellow rotate2 btn-lg btn-block vert-align"
+                    style="margin-top:50px;" v-on:click="selectRoom('1 vs 1', 'room1v1');">
+                    JOIN 1 vs 1 !
+                </button>
+                <button type="button" class="col-md-4 offset-md-4 col-8 offset-2 btn btn button-yellow rotate btn-lg btn-block vert-align"
+                    v-on:click="selectRoom('2 vs 2', 'room2v2')">
+                    JOIN 2 vs 2 ! </button>
+                </button>
+                <button type="button" class="col-md-4 offset-md-4 col-8 offset-2 btn btn button-yellow rotate2 btn-lg btn-block vert-align"
+                    v-on:click="selectRoom('FREE FOR ALL', 'roomFFA')">
+                    FREE FOR ALL ! </button>
+                </button>
+                <div>
+                    <button class="bulle" v-show="showIntroMsg" v-on:click="showHideIntro()">
+                        <div class="content-bulle">
+							<h1 style="font-size: 1.1em">Welcome to <strong>buildfight</strong>.com, this tool will
+                                allow you to find opponents
+                                easily in the
+                                <strong>playground</strong> mode of <strong>Fortnite</strong> Battle Royal,
+                                choose your game mode to find an opponent. Have fun !</h1>
+                        </div>
+                    </button>
+                    <img class="lama" v-on:click="showHideIntro()" src="/assets/img/lama-sm.png">
+                </div>
+            </div>
+            <div class="page-height cinema enableScroll col-12 video-container" id="page-2" style="margin-top: 50vh">
+                <div class="video-container">
+                    <iframe class="d-xl-none d-block center video fr col-10 offset-1" width="1024" height="480" src="https://www.youtube.com/embed/GepSllz4Fco?rel=0&amp;showinfo=0"
+                        frameborder="0" allow="autoplay; encrypted-media" allowfullscreen frameborder="0"></iframe>
+                    <iframe class="d-none d-xl-block center video fr col-8 offset-2" width="1024" height="480" src="https://www.youtube.com/embed/GepSllz4Fco?rel=0&amp;showinfo=0"
+                        frameborder="0" allow="autoplay; encrypted-media" allowfullscreen frameborder="0"></iframe>
+                </div>
+            </div>
+
+            <!-- TIPS AND RULES -->
+            <div class="page-height enableScroll dev-blog rules col-12" style="margin-top: 100vh" id="page-3">
+                <div class="grid"></div>
+                <div class="col-12 title tracking-in-expand-fwd-bottom">TIPS AND RULES</div>
+                <div class="natural-scroll">
+                    <div class="col-10 offset-1 news bounce-in-fwd row">
+                        <div class="col-12">
+                            <h2 style="font-family: 'burbank'; color: #FFFE55">Tips</h3>
+                                <ul>
+                                    <li>Seul la room de l'hôte doit être rejoint</li>
+                                    <li>C'est a l'hôte d'inviter les joueurs de la room</li>
+                                    <li>Ajouter les joueurs de la room via les bouttons à coté du login</li>
+                                    <li>Le premier sert a copier le nom epic du joueur</li>
+                                    <li>Le second ajoute le joueur via le site officiel directement</li>
+                                    <li>Votez pour la regle qui sera établit. Un arrangement sur les regles peut être
+                                        effectué,
+                                        si toutes les personnes sont d'accord. Soyez indulgeant !</li>
+                                    <li>Si il y a une egalité sur la règle voté, la règle B1 est appliqué</li>
+                                    <li>Les joueurs ne doivent pas être face a face lors du depart mais decalé d'une
+                                        planche
+                                        sur le coté</li>
+                                    <li>La distance de depart est entre 3 et 15 planches</li>
+                                    <li>Pour tout vote égalitaire, le types de règles choisit prend le dessus</li>
+                                </ul>
+                        </div>
+                        <div class="col-12">
+                            <h2 style="font-family: 'burbank'; color: #FFFE55">Rules</h3>
+                                <ul>
+                                    <h3 style="font-family: 'burbank'">B1</h3>
+                                    <li>7 minutes pour loot</li>
+                                    <li>Toutes les armes sont autorisées sauf explosives</li>
+                                    <li>Grenade rebondissante, pistolet ventouse, jetpack interdit (sauf accord des
+                                        joueurs)</li>
+                                    <li>Le droit d'utilisation de shields sont a voter dans la room de discution, si
+                                        aucun
+                                        accord est trouvé, les shields sont interdit</li>
+                                    <li>Le port de shield dans son équipement est interdit, tous les shields trouvé
+                                        doivent
+                                        être consommé ou transporté a l'exterieur des batiments s'ils sont autorisé</li>
+                                    <li>La prise de potion pendant le fight est interdite (sauf accord des joueurs)</li>
+                                    <li>Les joueurs peuvent choisir le lieu de rencontre, s'il ne sont pas d'accord,
+                                        Tilted
+                                        Towers sera la référence. L'allée entre le Big Ben et le camion contenant
+                                        souvent
+                                        un
+                                        coffre sera le lieu du buildbattle</li>
+                                    <li>Le départ d'un fight doit être défini par la totalité des joueurs, au moins 10
+                                        secondes
+                                        a l'avance, via le chronomètre</li>
+                                    <li>Il est interdit de récupérer le loot d'un autre aprés sa mort</li>
+                                    <li>Les munitions ainsi que les matériaux peuvent être récupéré par le gagnant du
+                                        buildfight, mais doit OBLIGATOIREMENT diviser la totalité par 2</li>
+                                    <li>Aprés le buildbattle, le ou les adversaires survivants doivent attendre que le
+                                        ou
+                                        les
+                                        adversaires opposés récupèrent leurs loot et redescende du build si besoin</li>
+                                    <li>Soyez consiliant, si besoin laisser les joueurs farmer et looter 2 a 3 minutes</li>
+                                </ul>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <ul>
+                                <h3 style="font-family: 'burbank'">B2</h3>
+                                <li>Même règles qu'en B1, mais toutes les armes et gadgets sont autorisés</li>
+                            </ul>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <ul>
+                                <h3 style="font-family: 'burbank'">B3</h3>
+                                <li>Pas de regles, c'est l'anarchie!</li>
+                            </ul>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!--- DEV BLOG  -->
+
+            <div class="page-height enableScroll dev-blog col-12" style="margin-top: 100vh" id="page-4">
+                <div class="grid" style="bottom: 50vh;"></div>
+                <img v-bind:src="chestPath" class="chest chestAnim" v-on:click="openChest()" v-show="showChest">
+                <div v-show="showDevBlog">
+                    <div class="col-12 title tracking-in-expand-fwd-bottom">DEV BLOG</div>
+                    <div class="col-10 offset-1 news natural-scroll bounce-in-fwd">
+                        <h2><b style="font-family: 'burbank'; color: #FFFE55">NEXT FEATURES</b></h2>
+                        les nouveauté a venir :
+                        <ul style="color:rgb(233, 233, 233)">
+                            <li>Plus de filtres pour afiné sa recherche</li>
+                            <li>Un mode creatif pour cree des structures incroyables avec plusieurs !</li>
+                            <li>l'organisation de tournois reguliers</li>
+                            <li>Un system de recompense</li>
+                            <li>Plein d'autres choses cool !</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="enableScroll partnairs">
+                <div class="row footer col-12 remove-marge" id="page-5">
+                    <div class="row col-md-8 offset-md-2">
+                        <div class="col-md-4">
+                            <h5 class="text-white">PARTNERS</h5>
+                            <p>Epic games</p>
+                            <p>zboob corp</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h5 class="text-white">SOCIAL</h5>
+                            <a href="https://discord.gg/ctBqW6b" target="_blank" class="icon fab fa-discord" style="font-size: 2.5em;"></a>
+                            <a href="https://www.facebook.com/buildfightOfficial/?fb_dtsg_ag=AdxJomMA1tlgl4p6BsMODJkO_XTG2CW-JpCHeH1xn56c3Q%3AAdw_WDu9Jofytckc--_MApmuR05UumPigt6VNIt7EzSh4Q"
+                                target="_blank" class="icon fab fa-facebook" style="font-size: 2.5em;"></a>
+                            <a href="https://twitter.com/?lang=fr" target="_blank" class="icon fab fa-twitter" style="font-size: 2.5em;"></a>
+                            <a href="https://www.instagram.com/buildfight.official/" target="_blank" class="icon fab fa-instagram"
+                                style="font-size: 2.5em;"></a>
+                        </div>
+                        <div class="col-md-4">
+                            <h5 class="text-white">CONTACT</h5>
+                            <p>contact@buildfight.com</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Page du chat -->
+
+        <div v-show="showChat" class="page-chat">
+            <div class="grid"></div>
+            <div class="row remove-marge wallpaper2" style="padding-bottom: 10vh">
+                <div class="fade-in-fwd  col-12 remove-marge row">
+                    <div class="col-12">
+                        <div class="picContainer your-skin">
+                            <i v-if="position == 1" style="position: absolute; color: #FFFF01" class="fas fa-star"></i>
+                            <div v-on:click="showLocker = true" v-bind:class="'team-' + position + ' profilePic your-skin'"
+                                v-bind:style="{ 'background-image': 'url(/assets/img/skins/'+ skinId +'.png)'  }"></div>
+                        </div>
+                    </div>
+                    <div class="col-12"><button type="button" class="col-sm-6 col-md-4 offset-sm-3 offset-md-4 col-xl-2 offset-xl-5 btn btn button-red rotate2 btn-lg btn-block vert-align"
+                            v-on:click="goHome();" style="margin-bottom:30px; margin-top:50px;">
+                            LEAVE THE ROOM </button></div>
+                    </button>
+
+                    <div class="col-7 col-md-2 col-xl-2 offset-md-3 offet-2 stickers-parent">
+                        <div class="stickers col-12"> #{{actualRoom}} </div>
+                    </div>
+                    <div class="col-sm-12 d-block d-md-none espace-vide"></div>
+                    <div class="col-6 col-md-2 offset-md-3 offset-lg-3 offset-xl-3 offset-3 text-center add-friend">
+                        <div> {{roomStatus}}
+                            <NOBR v-if="roomStatus == 'WAIT PLAYERS' || roomStatus == '1 PLAYER FOUND, WAIT FOR 2 PLAYERS' || roomStatus == '2 PLAYERS FOUND, WAIT FOR 1 PLAYER'">
+                                <span>
+                                    <span class="loader__dot">.</span>
+                                    <span class="loader__dot">.</span>
+                                    <span class="loader__dot">.</span>
+                                </span>
+                            </NOBR>
+                        </div>
+                    </div>
+                    <i class="arrow-down text-center col-6 col-md-2 offset-md-8 offset-3 fas fa-caret-down "></i>
+
+                    <img src="/assets/img/logo.svg" class="logo-trans col-md-4 offset-md-4" />
+                    <div class="chat-box col-12 col-md-5 col-9 offset-md-3 order-3 order-md-1">
+                        <div class="msgs break-word">
+                            <div v-for="(msg,index) in msgs" v-if="msg.auteur == true" class="alignement">
+                                <p class="envoi">{{msg.content}}</p>
+                            </div>
+                            <div v-else>
+                                <div class="authour" v-if="index > 0 && msgs[index - 1].name != msg.name">{{msg.name}}
+                                </div>
+                                <div class="authour" v-if="index == 0">{{msg.name}} </div>
+                                <p class="reception">{{msg.content}} </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mates-box col-12 col-md-2 order-2 order-md-2 row remove-marge">
+                        <div class="col-12 row remove-marge" style="max-height: 15em;">
+                            <div v-for="(mate, index) in mates" v-if="mate != epicId" class="col-4 col-md-12 remove-marge">
+                                <div class="picContainer">
+                                    <i v-if="index == 0" style="position: absolute; color: #FFFF01" class="fas fa-star"></i>
+                                    <div v-if="actualRoom == '2 vs 2'" v-bind:class="'profilePic team-' + (partyColor[index]) + ''"
+                                        v-bind:style="{ 'background-image': 'url(/assets/img/skins/'+ matesSkins[index] +'.png)'  }"></div>
+                                    <div v-else v-bind:class="'profilePic team-' + (index + 1) + ''" v-bind:style="{ 'background-image': 'url(/assets/img/skins/'+ matesSkins[index] +'.png)'  }"></div>
+                                </div>
+                                <center>
+                                    <div v-bind:class="'flag-icon-' + matesCountrys[index]" style="width: 1.3em; height: 0.8em; background-size: cover; display: inline-block"></div>
+                                    <span v-bind:id="mate">{{mate}}
+                                        <i v-on:click="copy(mate)" class="fas fa-paste icon paste"></i>
+                                        <i v-on:click="addFriend(mate)" class="fas fa-user-plus icon"></i>
+                                    </span>
+                                </center>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="input-group mb-5 order-3">
+                        <input v-model="newMsg" placeholder="Enter message here..." v-on:keyup.enter="sendMsg" class="chat-input form-control col-md-5 offset-md-3 col-9">
+                        <button v-on:click="sendMsg" class="chat-button btn btn-outline-light col-md-2 col-lg-2 col-3">Send</button>
+                    </div>
+                </div>
+            </div>
+            <div class="row footer col-12 remove-marge" id="page-3">
+                <div class="row col-md-8 offset-md-2">
+                    <div class="col-md-4">
+                        <h5 class="text-white">PARTNERS</h5>
+                        <p>Epic games</p>
+                        <p>zboob corp</p>
+                    </div>
+                    <div class="col-md-4">
+                        <h5 class="text-white">SOCIAL</h5>
+                        <a href="https://discord.gg/ctBqW6b" target="_blank" class="icon fab fa-discord" style="font-size: 2.5em;"></a>
+                        <a href="https://www.facebook.com/buildfightOfficial/?fb_dtsg_ag=AdxJomMA1tlgl4p6BsMODJkO_XTG2CW-JpCHeH1xn56c3Q%3AAdw_WDu9Jofytckc--_MApmuR05UumPigt6VNIt7EzSh4Q"
+                            target="_blank" class="icon fab fa-facebook" style="font-size: 2.5em;"></a>
+                        <a href="https://twitter.com/?lang=fr" target="_blank" class="icon fab fa-twitter" style="font-size: 2.5em;"></a>
+                        <a href="https://www.instagram.com/buildfight.official/" target="_blank" class="icon fab fa-instagram"
+                            style="font-size: 2.5em;"></a>
+                    </div>
+                    <div class="col-md-4">
+                        <h5 class="text-white">CONTACT</h5>
+                        <p>contact@buildfight.com</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>
+    <!-- footer -->
+
+    <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.1"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js" integrity="sha384-smHYKdLADwkXOn1EmN1qk/HfnUcbVRZyYmZ4qpPea6sjB/pTJ0euyQp0Mk8ck+5T"
+        crossorigin="anonymous"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/src/vuejs/components/register_vue.js"></script>
+    <script src="/src/vuejs/components/global_vue.js"></script>
+
+    <script src="/src/socket/socketEvent.js"></script>
+    <script src="/assets/js_dom/script.js"></script>
+    <script src="/assets/js_dom/ajax_settings.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.0/jquery-ui.js" integrity="sha256-0YPKAwZP7Mp3ALMRVB2i8GXeEndvCq3eSl/WsAl1Ryk="
+        crossorigin="anonymous"></script>
+</body>
+
+</html>
